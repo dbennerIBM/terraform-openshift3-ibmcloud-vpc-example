@@ -119,102 +119,102 @@ module "infrastructure" {
   bastion                      = "${var.bastion}"
 }
 
-module "console_loadbalancer" {
-    source                  = "github.com/ibm-cloud-architecture/terraform-lb-haproxy-vmware"
+#module "console_loadbalancer" {
+#    source                  = "github.com/ibm-cloud-architecture/terraform-lb-haproxy-vmware"
+#
+#    vsphere_server                = "${var.vsphere_server}"
+#    vsphere_allow_unverified_ssl  = "${var.vsphere_allow_unverified_ssl}"
+#    
+#    vsphere_datacenter_id     = "${data.vsphere_datacenter.dc.id}"
+#    vsphere_cluster_id        = "${data.vsphere_compute_cluster.cluster.id}"
+#    vsphere_resource_pool_id  = "${data.vsphere_resource_pool.pool.id}"
+#    datastore_id              = "${var.datastore != "" ? data.vsphere_datastore.datastore.0.id : ""}"
+#    datastore_cluster_id      = "${var.datastore_cluster != "" ? data.vsphere_datastore_cluster.datastore_cluster.0.id : ""}"
+#
+#    # Folder to provision the new VMs in, does not need to exist in vSphere
+#    folder_path               = "${local.folder_path}"
+#    instance_name             = "${var.hostname_prefix}-${random_id.tag.hex}-console"
+#
+#    private_network_id = "${data.vsphere_network.private_network.id}"
+#    private_ip_address = "${cidrhost(var.private_staticipblock, var.private_staticipblock_offset + var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"] + 1)}"
+#    private_netmask = "${var.private_netmask}"
+#    private_gateway = "${var.private_gateway}"
+#    private_domain               = "${var.private_domain}"
+#
+#    public_network_id = "${var.public_network_label != "" ? data.vsphere_network.public_network.0.id : ""}"
+#    public_ip_address = "${var.public_network_label != "" ? cidrhost(var.public_staticipblock, var.public_staticipblock_offset + var.bastion["nodes"] + 1) : ""}"
+#    public_netmask = "${var.public_network_label != "" ? var.public_netmask: ""}"
+#    public_gateway = "${var.public_network_label != "" ? var.public_gateway : ""}"
+#    public_domain               = "${var.public_domain}"
+#
+#    dns_servers = compact(concat(var.public_dns_servers, var.private_dns_servers))
+#
+#    # how to ssh into the template
+#    template                         = "${var.template}"
+#    template_ssh_user                = "${var.ssh_user}"
+#    template_ssh_password            = "${var.ssh_password}"
+#    template_ssh_private_key         = "${file(var.ssh_private_key_file)}"
+#
+#    rhn_username       = "${var.rhn_username}"
+#    rhn_password       = "${var.rhn_password}"
+#    rhn_poolid         = "${var.rhn_poolid}"
+#
+#    bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
+#
+#    frontend = ["443"]
+#    backend = {
+#        "443" = "${join(",", module.infrastructure.master_private_ip)}"
+#    }
+#}
 
-    vsphere_server                = "${var.vsphere_server}"
-    vsphere_allow_unverified_ssl  = "${var.vsphere_allow_unverified_ssl}"
-    
-    vsphere_datacenter_id     = "${data.vsphere_datacenter.dc.id}"
-    vsphere_cluster_id        = "${data.vsphere_compute_cluster.cluster.id}"
-    vsphere_resource_pool_id  = "${data.vsphere_resource_pool.pool.id}"
-    datastore_id              = "${var.datastore != "" ? data.vsphere_datastore.datastore.0.id : ""}"
-    datastore_cluster_id      = "${var.datastore_cluster != "" ? data.vsphere_datastore_cluster.datastore_cluster.0.id : ""}"
-
-    # Folder to provision the new VMs in, does not need to exist in vSphere
-    folder_path               = "${local.folder_path}"
-    instance_name             = "${var.hostname_prefix}-${random_id.tag.hex}-console"
-
-    private_network_id = "${data.vsphere_network.private_network.id}"
-    private_ip_address = "${cidrhost(var.private_staticipblock, var.private_staticipblock_offset + var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"] + 1)}"
-    private_netmask = "${var.private_netmask}"
-    private_gateway = "${var.private_gateway}"
-    private_domain               = "${var.private_domain}"
-
-    public_network_id = "${var.public_network_label != "" ? data.vsphere_network.public_network.0.id : ""}"
-    public_ip_address = "${var.public_network_label != "" ? cidrhost(var.public_staticipblock, var.public_staticipblock_offset + var.bastion["nodes"] + 1) : ""}"
-    public_netmask = "${var.public_network_label != "" ? var.public_netmask: ""}"
-    public_gateway = "${var.public_network_label != "" ? var.public_gateway : ""}"
-    public_domain               = "${var.public_domain}"
-
-    dns_servers = compact(concat(var.public_dns_servers, var.private_dns_servers))
-
-    # how to ssh into the template
-    template                         = "${var.template}"
-    template_ssh_user                = "${var.ssh_user}"
-    template_ssh_password            = "${var.ssh_password}"
-    template_ssh_private_key         = "${file(var.ssh_private_key_file)}"
-
-    rhn_username       = "${var.rhn_username}"
-    rhn_password       = "${var.rhn_password}"
-    rhn_poolid         = "${var.rhn_poolid}"
-
-    bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
-
-    frontend = ["443"]
-    backend = {
-        "443" = "${join(",", module.infrastructure.master_private_ip)}"
-    }
-}
-
-module "app_loadbalancer" {
-    source                  = "github.com/ibm-cloud-architecture/terraform-lb-haproxy-vmware"
-
-    vsphere_server                = "${var.vsphere_server}"
-    vsphere_allow_unverified_ssl  = "${var.vsphere_allow_unverified_ssl}"
-    
-    vsphere_datacenter_id     = "${data.vsphere_datacenter.dc.id}"
-    vsphere_cluster_id        = "${data.vsphere_compute_cluster.cluster.id}"
-    vsphere_resource_pool_id  = "${data.vsphere_resource_pool.pool.id}"
-    datastore_id              = "${var.datastore != "" ? data.vsphere_datastore.datastore.0.id : ""}"
-    datastore_cluster_id      = "${var.datastore_cluster != "" ? data.vsphere_datastore_cluster.datastore_cluster.0.id : ""}"
-
-    # Folder to provision the new VMs in, does not need to exist in vSphere
-    folder_path               = "${local.folder_path}"
-    instance_name             = "${var.hostname_prefix}-${random_id.tag.hex}-app"
-
-    private_network_id  = "${data.vsphere_network.private_network.id}"
-    private_ip_address  = "${cidrhost(var.private_staticipblock, var.private_staticipblock_offset + var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"] + 2)}"
-    private_netmask     = "${var.private_netmask}"
-    private_gateway     = "${var.private_gateway}"
-    private_domain      = "${var.private_domain}"
-
-    public_network_id   = "${var.public_network_label != "" ? data.vsphere_network.public_network.0.id : ""}"
-    public_ip_address   = "${var.public_network_label != "" ? cidrhost(var.public_staticipblock, var.public_staticipblock_offset + var.bastion["nodes"] + 2) : ""}"
-    public_netmask      = "${var.public_network_label != "" ? var.public_netmask : ""}"
-    public_gateway      = "${var.public_network_label != "" ? var.public_gateway : ""}"
-    public_domain       = "${var.public_domain}"
-
-    dns_servers = compact(concat(var.public_dns_servers, var.private_dns_servers))
-
-    # how to ssh into the template
-    template                         = "${var.template}"
-    template_ssh_user                = "${var.ssh_user}"
-    template_ssh_password            = "${var.ssh_password}"
-    template_ssh_private_key         = "${file(var.ssh_private_key_file)}"
-
-    bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
-
-    rhn_username       = "${var.rhn_username}"
-    rhn_password       = "${var.rhn_password}"
-    rhn_poolid         = "${var.rhn_poolid}"
-
-    frontend = ["80", "443"]
-    backend = {
-        "443" = "${join(",", module.infrastructure.infra_private_ip)}"
-        "80" = "${join(",", module.infrastructure.infra_private_ip)}"
-    }
-}
+#module "app_loadbalancer" {
+#    source                  = "github.com/ibm-cloud-architecture/terraform-lb-haproxy-vmware"
+#
+#    vsphere_server                = "${var.vsphere_server}"
+#    vsphere_allow_unverified_ssl  = "${var.vsphere_allow_unverified_ssl}"
+#    
+#    vsphere_datacenter_id     = "${data.vsphere_datacenter.dc.id}"
+#    vsphere_cluster_id        = "${data.vsphere_compute_cluster.cluster.id}"
+#    vsphere_resource_pool_id  = "${data.vsphere_resource_pool.pool.id}"
+#    datastore_id              = "${var.datastore != "" ? data.vsphere_datastore.datastore.0.id : ""}"
+#    datastore_cluster_id      = "${var.datastore_cluster != "" ? data.vsphere_datastore_cluster.datastore_cluster.0.id : ""}"
+#
+#    # Folder to provision the new VMs in, does not need to exist in vSphere
+#    folder_path               = "${local.folder_path}"
+#    instance_name             = "${var.hostname_prefix}-${random_id.tag.hex}-app"
+#
+#    private_network_id  = "${data.vsphere_network.private_network.id}"
+#    private_ip_address  = "${cidrhost(var.private_staticipblock, var.private_staticipblock_offset + var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"] + 2)}"
+#    private_netmask     = "${var.private_netmask}"
+#    private_gateway     = "${var.private_gateway}"
+#    private_domain      = "${var.private_domain}"
+#
+#    public_network_id   = "${var.public_network_label != "" ? data.vsphere_network.public_network.0.id : ""}"
+#    public_ip_address   = "${var.public_network_label != "" ? cidrhost(var.public_staticipblock, var.public_staticipblock_offset + var.bastion["nodes"] + 2) : ""}"
+#    public_netmask      = "${var.public_network_label != "" ? var.public_netmask : ""}"
+#    public_gateway      = "${var.public_network_label != "" ? var.public_gateway : ""}"
+#    public_domain       = "${var.public_domain}"
+#
+#    dns_servers = compact(concat(var.public_dns_servers, var.private_dns_servers))
+#
+#    # how to ssh into the template
+#    template                         = "${var.template}"
+#    template_ssh_user                = "${var.ssh_user}"
+#    template_ssh_password            = "${var.ssh_password}"
+#    template_ssh_private_key         = "${file(var.ssh_private_key_file)}"
+#
+#    bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
+#
+#    rhn_username       = "${var.rhn_username}"
+#    rhn_password       = "${var.rhn_password}"
+#    rhn_poolid         = "${var.rhn_poolid}"
+#
+#    frontend = ["80", "443"]
+#    backend = {
+#        "443" = "${join(",", module.infrastructure.infra_private_ip)}"
+#        "80" = "${join(",", module.infrastructure.infra_private_ip)}"
+#    }
+#}
 
 locals {
   rhn_all_nodes = "${concat(
@@ -247,77 +247,77 @@ module "rhnregister" {
   all_count          = "${local.rhn_all_count}"
 }
 
-module "dns_private" {
-    source                  = "github.com/ibm-cloud-architecture/terraform-dns-rfc2136"
+#module "dns_private" {
+#    source                  = "github.com/ibm-cloud-architecture/terraform-dns-rfc2136"
+#
+#    node_count = "${var.bastion["nodes"] + 
+#      var.master["nodes"] + 
+#      var.worker["nodes"] + 
+#      var.infra["nodes"] + 
+#      var.storage["nodes"] +
+#      1 +
+#      1}"
+#
+#    node_hostnames = concat(
+#            list(module.infrastructure.bastion_hostname),
+#            module.infrastructure.master_hostname,
+#            module.infrastructure.worker_hostname,
+#            module.infrastructure.infra_hostname,
+#            module.infrastructure.storage_hostname,
+#            list(module.console_loadbalancer.node_hostname),
+#            list(module.app_loadbalancer.node_hostname))
+#
+#    node_ips = concat(
+#            list(module.infrastructure.bastion_private_ip),
+#            module.infrastructure.master_private_ip,
+#            module.infrastructure.worker_private_ip,
+#            module.infrastructure.infra_private_ip,
+#            module.infrastructure.storage_private_ip,
+#            list(module.console_loadbalancer.node_private_ip),
+#            list(module.app_loadbalancer.node_private_ip))
+#
+#    zone_name               = "${var.private_domain}."
+#    dns_server              = "${element(var.private_dns_servers, 0)}"
+#
+#    create_node_ptr_records = true
+#
+#    key_name = "${var.dns_key_name}"
+#    key_algorithm = "${var.dns_key_algorithm}"
+#    key_secret = "${var.dns_key_secret}"
+#    record_ttl = "${var.dns_record_ttl}" 
+#}
 
-    node_count = "${var.bastion["nodes"] + 
-      var.master["nodes"] + 
-      var.worker["nodes"] + 
-      var.infra["nodes"] + 
-      var.storage["nodes"] +
-      1 +
-      1}"
 
-    node_hostnames = concat(
-            list(module.infrastructure.bastion_hostname),
-            module.infrastructure.master_hostname,
-            module.infrastructure.worker_hostname,
-            module.infrastructure.infra_hostname,
-            module.infrastructure.storage_hostname,
-            list(module.console_loadbalancer.node_hostname),
-            list(module.app_loadbalancer.node_hostname))
+#module "dns_public" {
+#    source                  = "github.com/ibm-cloud-architecture/terraform-dns-cloudflare"
+#
+#    cloudflare_email         = "${var.cloudflare_email}"
+#    cloudflare_token         = "${var.cloudflare_token}"
+#    cloudflare_zone          = "${var.cloudflare_zone}"
+#
+#    num_cnames = 2
+#    cnames = "${zipmap(
+#        concat(
+#            list("${var.master_cname}"),
+#            list("*.${var.app_cname}")
+#        ),
+#        concat(
+#            list("${module.console_loadbalancer.node_hostname}.${var.private_domain}"),
+#            list("${module.app_loadbalancer.node_hostname}.${var.private_domain}")
+#        )
+#    )}"
+#}
 
-    node_ips = concat(
-            list(module.infrastructure.bastion_private_ip),
-            module.infrastructure.master_private_ip,
-            module.infrastructure.worker_private_ip,
-            module.infrastructure.infra_private_ip,
-            module.infrastructure.storage_private_ip,
-            list(module.console_loadbalancer.node_private_ip),
-            list(module.app_loadbalancer.node_private_ip))
-
-    zone_name               = "${var.private_domain}."
-    dns_server              = "${element(var.private_dns_servers, 0)}"
-
-    create_node_ptr_records = true
-
-    key_name = "${var.dns_key_name}"
-    key_algorithm = "${var.dns_key_algorithm}"
-    key_secret = "${var.dns_key_secret}"
-    record_ttl = "${var.dns_record_ttl}" 
-}
-
-
-module "dns_public" {
-    source                  = "github.com/ibm-cloud-architecture/terraform-dns-cloudflare"
-
-    cloudflare_email         = "${var.cloudflare_email}"
-    cloudflare_token         = "${var.cloudflare_token}"
-    cloudflare_zone          = "${var.cloudflare_zone}"
-
-    num_cnames = 2
-    cnames = "${zipmap(
-        concat(
-            list("${var.master_cname}"),
-            list("*.${var.app_cname}")
-        ),
-        concat(
-            list("${module.console_loadbalancer.node_hostname}.${var.private_domain}"),
-            list("${module.app_loadbalancer.node_hostname}.${var.private_domain}")
-        )
-    )}"
-}
-
-module "certs" {
-    source                   = "github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare?ref=v1.0"
-
-    cloudflare_email         = "${var.cloudflare_email}"
-    cloudflare_token         = "${var.cloudflare_token}"
-    letsencrypt_email        = "${var.letsencrypt_email}"
-
-    cluster_cname            = "${var.master_cname}"
-    app_subdomain            = "${var.app_cname}"
-}
+#module "certs" {
+#    source                   = "github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare?ref=v1.0"
+#
+#    cloudflare_email         = "${var.cloudflare_email}"
+#    cloudflare_token         = "${var.cloudflare_token}"
+#    letsencrypt_email        = "${var.letsencrypt_email}"
+#
+#    cluster_cname            = "${var.master_cname}"
+#    app_subdomain            = "${var.app_cname}"
+#}
 
 # ####################################################
 # Generate /etc/hosts files
@@ -401,7 +401,7 @@ module "openshift" {
   image_registry_password = "${var.image_registry_password == "" ? var.rhn_password : var.image_registry_password}"
 
   # internal API endpoint
-  master_cluster_hostname = "${module.console_loadbalancer.node_hostname}.${var.private_domain}"
+  master_cluster_hostname = "${var.master_cname}"
 
   # public endpoints - must be in DNS
   cluster_public_hostname = "${var.master_cname}"
@@ -413,9 +413,9 @@ module "openshift" {
   service_network_cidr    = "${var.service_network_cidr}"
   host_subnet_length      = "${var.host_subnet_length}"
 
-  master_cert             = "${module.certs.master_cert}"
-  master_key              = "${module.certs.master_key}"
-  router_cert             = "${module.certs.router_cert}"
-  router_key              = "${module.certs.router_key}"
-  router_ca_cert          = "${module.certs.ca_cert}"
+#  master_cert             = "${module.certs.master_cert}"
+#  master_key              = "${module.certs.master_key}"
+#  router_cert             = "${module.certs.router_cert}"
+#  router_key              = "${module.certs.router_key}"
+#  router_ca_cert          = "${module.certs.ca_cert}"
 }

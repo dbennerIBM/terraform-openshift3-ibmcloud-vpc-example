@@ -163,19 +163,6 @@ variable "rhn_username" {}
 variable "rhn_password" {}
 variable "rhn_poolid" {}
 
-####################################
-# DNS Registration & Certificates
-####################################
-
-variable "cloudflare_email" {
-  default = ""
-}
-variable "cloudflare_token" {
-  default = ""
-}
-variable "cloudflare_zone" {
-  default = ""
-}
 
 variable "master_cname" {
   default = "master"
@@ -184,13 +171,6 @@ variable "app_cname" {
   description = "wildcard app domain (don't add the *. prefix)"
   default = "app"
 }
-variable "letsencrypt_email" {}
-
-variable "letsencrypt_api_endpoint" {
-  default = "https://acme-v02.api.letsencrypt.org/directory"
-}
-
-variable "letsencrypt_dns_provider" {}
 
 ####################################
 # OpenShift Installation
@@ -250,8 +230,3 @@ variable "icp_install_path" {
 variable "storage_class" {
   default = "glusterfs-storage"
 }
-
-variable "dns_key_name" {}
-variable "dns_key_algorithm" {}
-variable "dns_key_secret" {}
-variable "dns_record_ttl" {}

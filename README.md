@@ -13,9 +13,9 @@ Before deploying, you will need to set the following environment variables:
 export VSPHERE_USER=<user>
 export VSPHERE_PASSWORD=<password>
 
-export CLOUDFLARE_EMAIL=<cloudflare email>
-export CLOUDFLARE_TOKEN=<cloudflare api key>
-export CLOUDFLARE_API_KEY=<cloudflare api key>
+export TF_VAR_rhn_username=<redhat username>
+export TF_VAR_rhn_password=<redhat password>
+
 ```
 
 Use the following commands to deploy:

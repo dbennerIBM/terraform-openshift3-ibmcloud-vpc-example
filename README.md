@@ -4,10 +4,7 @@ End to end example of deploying Openshift on VMware. In this example we use the 
 
 * [terraform-openshift3-infra-vmware](https://github.com/ibm-cloud-architecture/terraform-openshift3-infra-vmware) - To create VMs on VMware.
 * [terraform-openshift-rhnregister](https://github.com/ibm-cloud-architecture/terraform-openshift-rhnregister) - To register all VMs with Red Hat Network subscriptions.
-* [terraform-lb-haproxy-vmware](https://github.com/ibm-cloud-architecture/terraform-lb-haproxy-vmware) - To create two HAProxy load balancers (one for the console, one for the application router).
-* [terraform-dns-rfc2136](https://github.com/ibm-cloud-architecture/terraform-dns-rfc2136) - To update our private network DNS server with all required records on the internal network.
-* [terraform-dns-cloudflare](https://github.com/ibm-cloud-architecture/terraform-dns-cloudflare) - To create CNAME records on cloudflare to get to the console and applications from our external network.
-* [terraform-certs-letsencrypt-cloudflare](https://github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare) - To generate certs from LetsEncrypt for our console and router
+* [terraform-dns-etc-hosts](https://github.com/ibm-cloud-architecture/terraform-dns-etc-hosts) - To hack DNS which we didn't have readily available, we generated an `/etc/hosts` file containing every node in the cluster and sync it to all nodes.
 * [terraform-openshift3-deploy](https://github.com/ibm-cloud-architecture/terraform-openshift3-deploy) - To generate the ansible inventory file and deploy Openshift.
 
 Before deploying, you will need to set the following environment variables:

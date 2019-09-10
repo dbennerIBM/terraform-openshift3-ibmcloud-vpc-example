@@ -30,13 +30,13 @@ terraform apply
 
 ## Example
 
-Example `terraform.tfvars` file.  We provision an HA Openshift cluster.
+Example `terraform.tfvars` file.  We provision an non-HA Openshift cluster.
 
 ```terraform
 #######################################
 ##### vSphere Access Credentials ######
 #######################################
-vsphere_server = "vsphere-server.my-domain.com"
+vsphere_server = "my-vsphere-server.mydomain.com"
 
 # Set username/password as environment variables VSPHERE_USER and VSPHERE_PASSWORD
 
@@ -50,103 +50,103 @@ ssh_private_key_file = "~/.ssh/id_rsa"
 # Following resources must exist in vSphere
 vsphere_datacenter = "dc01"
 vsphere_cluster = "cluster01"
-vsphere_resource_pool = "jkwong-ocp3"
-datastore_cluster = "dc01-ocp-cluster"
+vsphere_resource_pool = "respool01"
+datastore_cluster = "ds_cluster01"
 template = "rhel-7.6-template"
 
+# for the vsphere-standard storage class
+vsphere_storage_username = "<storageuser>"
+vsphere_storage_password = "<storagepassword>"
+vsphere_storage_datastore = "ds01"
+
+
 # vSphere Folder to provision the new VMs in, will be created
-folder = "terraform_jkwong_ocp"
+folder = "example"
 
 # MUST consist of only lower case alphanumeric characters and '-'
-hostname_prefix = "jkwong-ocp"
+hostname_prefix = "ocp-test"
 
 # it's best to use a service account for these
-image_registry_username = "<registry.redhat.io service account username>"
-image_registry_password = "<registry.redhat.io service acocunt password>"
+image_registry_username = "<service_acct_username>"
+image_registry_password = "<service_acct_token>"
 
-rhn_username = "<rhn username>"
-rhn_password = "<rhn password>"
-rhn_poolid = "<rhn pool id>"
+rhn_poolid = "<poolid>"
 
 ##### Network #####
 private_network_label = "private_network"
-private_staticipblock = "192.168.101.0/24"
-private_staticipblock_offset = 10           # IP assignment starts at 192.168.101.11
+bastion_private_ip = ["192.168.0.10"]
+master_private_ip = ["192.168.0.11"]
+infra_private_ip = ["192.168.0.12"]
+worker_private_ip = ["192.168.0.13", "192.168.0.14"]
+storage_private_ip = ["192.168.0.15", "192.168.0.16", "192.168.0.17"]
+
 private_netmask = "24"
-private_gateway = "192.168.101.1"
-private_domain = "internal-network.local"
-private_dns_servers = [ "192.168.101.2" ]
+private_gateway = "192.168.0.1"
+private_domain = "my-private-domain.local"
+private_dns_servers = [ "192.168.0.1" ]
 
-public_network_label = "external_network"
-public_staticipblock = "10.30.65.0/24"
-public_staticipblock_offset = 30            # ips - [ 10.30.65.31, 10.30.65.32, 10.30.65.33 ]
-public_netmask = "24"
-public_gateway = "10.30.65.1"
-public_domain = "my-public-domain.com"
-public_dns_servers = [ "1.1.1.1" ]
+# to stand up the registry a vssphere block volume
+storage_class = "vsphere-standard" 
 
-# for the private network DNS
-dns_key_name = "rndc-key."
-dns_key_algorithm = "hmac-md5"
-dns_key_secret = "<blahblahblah>"
-dns_record_ttl = 300
+# manually added to DNS, the app_cname is a wildcard domain pointing at the infra node
+master_cname = "ocp-master.my-private-domain.local"
+app_cname = "ocp-app.my-private-domain.local"
 
-# will add these to cloudflare domain, but it's going to be pointing at internal IPs
-master_cname = "ocp-console.my-public-domain.com"
-app_cname = "ocp-apps.my-public-domain.com"
+bastion = {
+    nodes               = "1"
+    vcpu                = "2"
+    memory              = "8192"
+    disk_size           = ""      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
+    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
+    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
+}
 
-# for letsencrypt cert generation with DNS01 challenge using cloudflare
-letsencrypt_email = "jkwong@ca.ibm.com"
-letsencrypt_dns_provider = "cloudflare"
-letsencrypt_api_endpoint="https://acme-v02.api.letsencrypt.org/directory"
-
-# node definitions
 master = {
-    nodes = "3"
-    vcpu = "8"
-    memory = "16384"
-
-    disk_size = "100"
-    docker_disk_size = "100"
-    thin_provisioned = "true"
-    keep_disk_on_remove = false
-    eagerly_scrub = false
+    nodes                 = "1"
+    vcpu                  = "8"
+    memory                = "32768"
+    disk_size             = ""      # Specify size or leave empty to use same size as template.
+    docker_disk_size      = "100"   # Specify size for docker disk, default 100.
+    thin_provisioned      = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
+    eagerly_scrub         = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
+    keep_disk_on_remove   = "false" # Set to 'true' to not delete a disk on removal.
 }
 
 infra = {
-    nodes = "3"
-    vcpu = "8"
-    memory = "32768"
-
-    disk_size = "100"
-    docker_disk_size = "100"
-    thin_provisioned = "true"
-    keep_disk_on_remove = false
-    eagerly_scrub = false
+    nodes               = "1"
+    vcpu                = "8"
+    memory              = "32768"
+    disk_size           = ""      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
+    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
+    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
 }
 
 worker = {
-    nodes = "3"
-    vcpu = "8"
-    memory = "32768"
-
-    disk_size = "100"
-    docker_disk_size = "100"
-    thin_provisioned = "true"
-    keep_disk_on_remove = false
-    eagerly_scrub = false
+    nodes               = "2"
+    vcpu                = "16"
+    memory              = "32768"
+    disk_size           = ""      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
+    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
+    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
 }
 
+# each storage node has 2x 250GB volumes used to store data
 storage = {
-    nodes = "3"
-    vcpu = "4"
-    memory = "16384"
-
-    disk_size = "100"
-    docker_disk_size = "100"
-    gluster_disk_size = "200"
-    thin_provisioned = "true"
-    keep_disk_on_remove = false
-    eagerly_scrub = false
+    nodes               = "3"
+    vcpu                = "4"
+    memory              = "8192"
+    disk_size           = ""      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    gluster_disk_size   = "250"
+    gluster_num_disks   = 2
+    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
+    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
+    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
 }
 ```

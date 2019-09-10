@@ -72,7 +72,7 @@ locals  {
 }
 
 module "infrastructure" {
-  source                       = "github.com/jkwong888/terraform-openshift3-infra-vmware"
+  source                       = "github.com/jkwong888/terraform-openshift3-infra-vmware?ref=v0.1"
 
   # vsphere information
   vsphere_server               = "${var.vsphere_server}"
@@ -139,7 +139,7 @@ locals {
 }
 
 module "rhnregister" {
-  source             = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister"
+  source             = "github.com/jkwong888/terraform-openshift-rhnregister?ref=v0.1"
 
   bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
   bastion_ssh_user        = "${var.ssh_user}"
@@ -179,7 +179,7 @@ locals {
 }
 
 module "etchosts" {
-    source = "github.com/ibm-cloud-architecture/terraform-dns-etc-hosts"
+    source = "github.com/jkwong888/terraform-dns-etc-hosts?ref=v0.2"
 
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     bastion_ssh_user        = "${var.ssh_user}"
@@ -197,7 +197,7 @@ module "etchosts" {
 }
 
 module "openshift" {
-  source = "github.com/jkwong888/terraform-openshift3-deploy"
+  source = "github.com/jkwong888/terraform-openshift3-deploy?ref=v0.1"
 
   dependson = [
     "${module.rhnregister.registered_resource}"

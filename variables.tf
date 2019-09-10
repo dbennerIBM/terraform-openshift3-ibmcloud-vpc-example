@@ -43,8 +43,38 @@ variable "bastion_ssh_private_key_file" {
 }
 variable "private_network_label" {}
 variable "private_domain" {}
-variable "private_staticipblock" {}
-variable "private_staticipblock_offset" {}
+variable "private_staticipblock" {
+  default = ""
+}
+variable "private_staticipblock_offset" {
+  default = 0
+}
+
+variable "bastion_private_ip" {
+  type = "list"
+  default = []
+}
+
+variable "master_private_ip" {
+  type = "list"
+  default = []
+}
+
+variable "infra_private_ip" {
+  type = "list"
+  default = []
+}
+
+variable "worker_private_ip" {
+  type = "list"
+  default = []
+}
+
+variable "storage_private_ip" {
+  type = "list"
+  default = []
+}
+
 variable "private_netmask" {}
 variable "private_gateway" {}
 variable "private_dns_servers" {
@@ -80,8 +110,6 @@ variable "public_dns_servers" {
   default = []
 }
 
-
-
 variable "bastion" {
   type = "map"
 
@@ -90,6 +118,7 @@ variable "bastion" {
     vcpu                = "2"
     memory              = "8192"
     disk_size           = ""      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"
     thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
     eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
     keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
@@ -150,6 +179,8 @@ variable "storage" {
     memory              = "8192"
     disk_size           = ""      # Specify size or leave empty to use same size as template.
     docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    gluster_disk_size   = "250"
+    gluster_num_disks   = "1"
     thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
     eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
     keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
@@ -230,3 +261,16 @@ variable "icp_install_path" {
 variable "storage_class" {
   default = "glusterfs-storage"
 }
+
+variable "vsphere_storage_username" {
+  default = ""
+}
+
+variable "vsphere_storage_password" {
+  default = ""
+}
+
+variable "vsphere_storage_datastore" {
+  default = ""
+}
+

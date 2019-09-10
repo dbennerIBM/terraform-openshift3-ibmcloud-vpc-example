@@ -72,7 +72,7 @@ locals  {
 }
 
 module "infrastructure" {
-  source                       = "github.com/ibm-cloud-architecture/terraform-openshift3-infra-vmware"
+  source                       = "github.com/jkwong888/terraform-openshift3-infra-vmware"
 
   # vsphere information
   vsphere_server               = "${var.vsphere_server}"
@@ -94,6 +94,12 @@ module "infrastructure" {
   public_domain                = "${var.public_domain}"
   public_dns_servers           = "${var.public_dns_servers}"
   
+  bastion_ip_address           = "${var.bastion_private_ip}"
+  master_ip_address            = "${var.master_private_ip}"
+  worker_ip_address            = "${var.worker_private_ip}"
+  infra_ip_address             = "${var.infra_private_ip}"
+  storage_ip_address           = "${var.storage_private_ip}"
+
   private_staticipblock        = "${var.private_staticipblock}"
   private_staticipblock_offset = "${var.private_staticipblock_offset}"
   private_netmask              = "${var.private_netmask}"
@@ -118,7 +124,6 @@ module "infrastructure" {
   storage                      = "${var.storage}"
   bastion                      = "${var.bastion}"
 }
-
 
 locals {
   rhn_all_nodes = "${concat(
@@ -155,20 +160,22 @@ module "rhnregister" {
 # Generate /etc/hosts files
 # ####################################################
 locals {
-    all_ips = "${concat(
-        "${list(module.infrastructure.bastion_private_ip)}",
-        "${module.infrastructure.master_private_ip}",
-        "${module.infrastructure.infra_private_ip}",
-        "${module.infrastructure.worker_private_ip}",
-        "${module.infrastructure.storage_private_ip}",
-    )}"
-    all_hostnames = "${concat(
-        "${list(module.infrastructure.bastion_hostname)}",
-        "${module.infrastructure.master_hostname}",
-        "${module.infrastructure.infra_hostname}",
-        "${module.infrastructure.worker_hostname}",
-        "${module.infrastructure.storage_hostname}",
-    )}"
+  all_ips = "${concat(
+    "${list(module.infrastructure.bastion_private_ip)}",
+    "${module.infrastructure.master_private_ip}",
+    "${module.infrastructure.infra_private_ip}",
+    "${module.infrastructure.worker_private_ip}",
+    "${module.infrastructure.storage_private_ip}",
+  )}"
+  all_hostnames = "${concat(
+    "${list(module.infrastructure.bastion_hostname)}",
+    "${module.infrastructure.master_hostname}",
+    "${module.infrastructure.infra_hostname}",
+    "${module.infrastructure.worker_hostname}",
+    "${module.infrastructure.storage_hostname}",
+  )}"
+
+  all_count = "${var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"]}"
 }
 
 module "etchosts" {
@@ -186,7 +193,7 @@ module "etchosts" {
     node_hostnames          = "${local.all_hostnames}"
     domain                  = "${var.private_domain}"
 
-    num_nodes = "${local.openshift_node_count}"
+    num_nodes = "${local.all_count}"
 }
 
 module "openshift" {
@@ -249,4 +256,24 @@ module "openshift" {
   service_network_cidr    = "${var.service_network_cidr}"
   host_subnet_length      = "${var.host_subnet_length}"
 
+  storageclass_file       = "${var.storage_class}"
+  storageclass_block      = "${var.storage_class}"
+
+  custom_inventory = [
+    "openshift_storage_glusterfs_storageclass_default=false",
+    "openshift_hosted_registry_storage_kind=vsphere",
+    "openshift_hosted_registry_storage_access_modes=['ReadWriteOnce']",
+    "openshift_hosted_registry_storage_annotations=['volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/vsphere-volume']",
+    "openshift_hosted_registry_replicas=1",
+    "openshift_cloudprovider_kind=vsphere",
+    "openshift_cloudprovider_vsphere_username=${var.vsphere_storage_username}",
+    "openshift_cloudprovider_vsphere_password=${var.vsphere_storage_password}",
+    "openshift_cloudprovider_vsphere_host=${var.vsphere_server}",
+    "openshift_cloudprovider_vsphere_datacenter=${var.vsphere_datacenter}",
+    "openshift_cloudprovider_vsphere_cluster=${var.vsphere_cluster}",
+    "openshift_cloudprovider_vsphere_resource_pool=${var.vsphere_resource_pool}",
+    "openshift_cloudprovider_vsphere_datastore=${var.vsphere_storage_datastore}",
+    "openshift_cloudprovider_vsphere_folder=${var.folder}",
+    "openshift_cloudprovider_vsphere_network=${var.private_network_label}"
+  ]
 }

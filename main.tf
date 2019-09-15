@@ -1,128 +1,29 @@
-resource "random_id" "tag" {
-  byte_length = 4
-}
-
 resource "tls_private_key" "installkey" {
-  algorithm = "RSA"
-  rsa_bits = "2048"
-}
-
-provider "vsphere" {
-  version        = "~> 1.1"
-  vsphere_server = "${var.vsphere_server}"
-
-  # if you have a self-signed cert
-  allow_unverified_ssl = "${var.vsphere_allow_unverified_ssl}"
-}
-
-##################################
-#### Collect resource IDs
-##################################
-data "vsphere_datacenter" "dc" {
-  name = "${var.vsphere_datacenter}"
-}
-
-data "vsphere_compute_cluster" "cluster" {
-  name          = "${var.vsphere_cluster}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-data "vsphere_datastore" "datastore" {
-  count = "${var.datastore != "" ? 1 : 0}"
-
-  name          = "${var.datastore}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-data "vsphere_datastore_cluster" "datastore_cluster" {
-  count = "${var.datastore_cluster != "" ? 1 : 0}"
-
-  name          = "${var.datastore_cluster}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-data "vsphere_resource_pool" "pool" {
-  name          = "${var.vsphere_cluster}/Resources/${var.vsphere_resource_pool}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-data "vsphere_network" "private_network" {
-  name          = "${var.private_network_label}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-data "vsphere_network" "public_network" {
-  count         = "${var.public_network_label != "" ? 1 : 0}"
-  name          = "${var.public_network_label}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-# Create a folder
-resource "vsphere_folder" "ocpenv" {
-  count = "${var.folder != "" ? 1 : 0}"
-  path = "${var.folder}"
-  type = "vm"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
-locals  {
-  folder_path = "${var.folder != "" ?
-        element(concat(vsphere_folder.ocpenv.*.path, list("")), 0)
-        : ""}"
+  algorithm   = "RSA"
 }
 
 module "infrastructure" {
-  source                       = "github.com/jkwong888/terraform-openshift3-infra-vmware?ref=v0.1"
+  source                       = "git::ssh://git@github.ibm.com/jkwong/terraform-openshift3-infra-ibmcloud-vpc"
 
-  # vsphere information
-  vsphere_server               = "${var.vsphere_server}"
-  vsphere_cluster_id           = "${data.vsphere_compute_cluster.cluster.id}"
-  vsphere_datacenter_id        = "${data.vsphere_datacenter.dc.id}"
-  vsphere_resource_pool_id     = "${data.vsphere_resource_pool.pool.id}"
-  private_network_id           = "${data.vsphere_network.private_network.id}"
-  public_network_id            = "${var.public_network_label != "" ? data.vsphere_network.public_network.0.id : ""}"
-  datastore_id                 = "${var.datastore != "" ? data.vsphere_datastore.datastore.0.id : ""}"
-  datastore_cluster_id         = "${var.datastore_cluster != "" ? data.vsphere_datastore_cluster.datastore_cluster.0.id : ""}"
-  folder_path                  = "${local.folder_path}"
+  key_name = ["${var.key_name}"]
+  deployment = "${var.deployment}"
 
-  instance_name                = "${var.hostname_prefix}-${random_id.tag.hex}"
+  domain = "${var.domain}"
+  os_image = "red-7.x-amd64"
 
-  public_staticipblock         = "${var.public_staticipblock}"
-  public_staticipblock_offset  = "${var.public_staticipblock_offset}"
-  public_gateway               = "${var.public_gateway}"
-  public_netmask               = "${var.public_netmask}"
-  public_domain                = "${var.public_domain}"
-  public_dns_servers           = "${var.public_dns_servers}"
-  
-  bastion_ip_address           = "${var.bastion_private_ip}"
-  master_ip_address            = "${var.master_private_ip}"
-  worker_ip_address            = "${var.worker_private_ip}"
-  infra_ip_address             = "${var.infra_private_ip}"
-  storage_ip_address           = "${var.storage_private_ip}"
+  vpc_region = "${var.vpc_region}"
+  vpc_address_prefix = "${var.vpc_address_prefix}"
+  vpc_subnet_cidr = "${var.vpc_subnet_cidr}"
 
-  private_staticipblock        = "${var.private_staticipblock}"
-  private_staticipblock_offset = "${var.private_staticipblock_offset}"
-  private_netmask              = "${var.private_netmask}"
-  private_gateway              = "${var.private_gateway}"
-  private_domain               = "${var.private_domain}"
-  private_dns_servers          = "${var.private_dns_servers}"
+  control = "${var.control}"
+  master = "${var.master}"
+  infra = "${var.infra}"
+  worker = "${var.worker}"
+  glusterfs = "${var.glusterfs}"
 
-  # how to ssh into the template
-  template                     = "${var.template}"
-  template_ssh_user            = "${var.ssh_user}"
-  template_ssh_password        = "${var.ssh_password}"
-  template_ssh_private_key     = "${file(var.ssh_private_key_file)}"
-
-  # the keys to be added between bastion host and the VMs
-  ssh_private_key              = "${tls_private_key.installkey.private_key_pem}"
-  ssh_public_key               = "${tls_private_key.installkey.public_key_openssh}"
-
-  # information about VM types
-  master                       = "${var.master}"
-  infra                        = "${var.infra}"
-  worker                       = "${var.worker}"
-  storage                      = "${var.storage}"
-  bastion                      = "${var.bastion}"
+  ssh_user = "ocpdeploy"
+  ssh_private_key = "${tls_private_key.installkey.private_key_pem}"
+  ssh_public_key = "${tls_private_key.installkey.public_key_openssh}"
 }
 
 locals {
@@ -134,19 +35,25 @@ locals {
         "${module.infrastructure.storage_private_ip}"
     )}"
 
-  rhn_all_count = "${var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"]}"
-  openshift_node_count = "${var.master["nodes"] + var.worker["nodes"] + var.infra["nodes"] +  var.storage["nodes"]}"
+  rhn_all_count = "${lookup(var.control, "nodes", 1) + 
+                     lookup(var.master, "nodes", 3) + 
+                     lookup(var.infra, "nodes", 3) + 
+                     lookup(var.worker, "nodes", 3) + 
+                     lookup(var.glusterfs, "nodes", 3)}"
+  openshift_node_count = "${lookup(var.master, "nodes", 3) + 
+                            lookup(var.worker, "nodes", 3) + 
+                            lookup(var.infra, "nodes", 3) +  
+                            lookup(var.glusterfs, "nodes", 3)}"
 }
 
 module "rhnregister" {
   source             = "github.com/jkwong888/terraform-openshift-rhnregister?ref=v0.1"
 
   bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
-  bastion_ssh_user        = "${var.ssh_user}"
-  bastion_ssh_password    = "${var.ssh_password}"
-  bastion_ssh_private_key = "${file(var.ssh_private_key_file)}"
+  bastion_ssh_user        = "ocpdeploy"
+  bastion_ssh_private_key = "${tls_private_key.installkey.private_key_pem}"
 
-  ssh_user           = "${var.ssh_user}"
+  ssh_user           = "ocpdeploy"
   ssh_private_key    = "${tls_private_key.installkey.private_key_pem}"
 
   rhn_username       = "${var.rhn_username}"
@@ -175,25 +82,36 @@ locals {
     "${module.infrastructure.storage_hostname}",
   )}"
 
-  all_count = "${var.bastion["nodes"] + var.master["nodes"] + var.infra["nodes"] + var.worker["nodes"] + var.storage["nodes"]}"
+  all_count = "${lookup(var.control, "nodes", 1) + 
+                     lookup(var.master, "nodes", 3) + 
+                     lookup(var.infra, "nodes", 3) + 
+                     lookup(var.worker, "nodes", 3) + 
+                     lookup(var.glusterfs, "nodes", 3)}"
 }
 
 module "etchosts" {
     source = "github.com/jkwong888/terraform-dns-etc-hosts?ref=v0.2"
 
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
-    bastion_ssh_user        = "${var.ssh_user}"
-    bastion_ssh_password    = "${var.ssh_password}"
-    bastion_ssh_private_key = "${file(var.ssh_private_key_file)}"
+    bastion_ssh_user        = "ocpdeploy"
+    bastion_ssh_private_key = "${tls_private_key.installkey.private_key_pem}"
 
-    ssh_user           = "${var.ssh_user}"
+    ssh_user           = "ocpdeploy"
     ssh_private_key    = "${tls_private_key.installkey.private_key_pem}"
     
     node_ips                = "${local.all_ips}"
     node_hostnames          = "${local.all_hostnames}"
-    domain                  = "${var.private_domain}"
+    domain                  = "${var.domain}"
 
     num_nodes = "${local.all_count}"
+}
+
+module "certs" {
+  source = "github.com/jkwong888/terraform-certs-letsencrypt-dns01"
+
+  letsencrypt_email ="${var.letsencrypt_email}"
+  app_subdomain = "${var.app_cname}"
+  cluster_cname = "${var.master_cname}"
 }
 
 module "openshift" {
@@ -205,37 +123,32 @@ module "openshift" {
 
   # cluster nodes
   node_count              = "${local.openshift_node_count}"
-  master_count            = "${var.master["nodes"]}"
-  infra_count             = "${var.infra["nodes"]}"
-  worker_count            = "${var.worker["nodes"]}"
-  storage_count           = "${var.storage["nodes"]}"
+  master_count            = "${lookup(var.master, "nodes", 3)}"
+  infra_count             = "${lookup(var.infra, "nodes", 3)}"
+  worker_count            = "${lookup(var.worker, "nodes", 3)}"
+  storage_count           = "${lookup(var.glusterfs, "nodes", 3)}"
   master_private_ip       = "${module.infrastructure.master_private_ip}"
   infra_private_ip        = "${module.infrastructure.infra_private_ip}"
   worker_private_ip       = "${module.infrastructure.worker_private_ip}"
   storage_private_ip      = "${module.infrastructure.storage_private_ip}"
-  master_hostname         = "${formatlist("%v.%v", module.infrastructure.master_hostname, var.private_domain)}"
-  infra_hostname          = "${formatlist("%v.%v", module.infrastructure.infra_hostname, var.private_domain)}"
-  worker_hostname         = "${formatlist("%v.%v", module.infrastructure.worker_hostname, var.private_domain)}"
-  storage_hostname        = "${formatlist("%v.%v", module.infrastructure.storage_hostname, var.private_domain)}"
+  master_hostname         = "${formatlist("%v.%v", module.infrastructure.master_hostname, var.domain)}"
+  infra_hostname          = "${formatlist("%v.%v", module.infrastructure.infra_hostname, var.domain)}"
+  worker_hostname         = "${formatlist("%v.%v", module.infrastructure.worker_hostname, var.domain)}"
+  storage_hostname        = "${formatlist("%v.%v", module.infrastructure.storage_hostname, var.domain)}"
 
-  # second disk is docker block device, in VMware it's /dev/sdb
-  docker_block_device     = "/dev/sdb"
+  # second disk is docker block device, in ibm cloud it's /dev/xvdd
+  docker_block_device     = "/dev/xvdc"
   
-  # third disk on storage nodes, in VMware it's /dev/sdc
-  gluster_block_devices   = ["/dev/sdc"]
+  # third disk on storage nodes, in ibm cloud it's /dev/xvdd
+  gluster_block_devices   = ["/dev/xvdd"]
 
   # connection parameters
   bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
-  bastion_ssh_user        = "${var.ssh_user}"
-  bastion_ssh_password    = "${var.ssh_password}"
-  bastion_ssh_private_key = "${file(var.ssh_private_key_file)}"
+  bastion_ssh_user        = "ocpdeploy"
+  bastion_ssh_private_key = "${tls_private_key.installkey.private_key_pem}"
 
-  ssh_user                = "${var.ssh_user}"
+  ssh_user                = "ocpdeploy"
   ssh_private_key         = "${tls_private_key.installkey.private_key_pem}"
-
-  cloudprovider           = {
-      kind = "vsphere"
-  }
 
   ose_version             = "${var.ose_version}"
   ose_deployment_type     = "${var.ose_deployment_type}"
@@ -243,8 +156,8 @@ module "openshift" {
   image_registry_username = "${var.image_registry_username == "" ? var.rhn_username : var.image_registry_username}"
   image_registry_password = "${var.image_registry_password == "" ? var.rhn_password : var.image_registry_password}"
 
-  # internal API endpoint
-  master_cluster_hostname = "${var.master_cname}"
+  # internal API endpoint -- lb url
+  master_cluster_hostname = "${module.infrastructure.master_loadbalancer_hostname}"
 
   # public endpoints - must be in DNS
   cluster_public_hostname = "${var.master_cname}"
@@ -259,21 +172,9 @@ module "openshift" {
   storageclass_file       = "${var.storage_class}"
   storageclass_block      = "${var.storage_class}"
 
-  custom_inventory = [
-    "openshift_storage_glusterfs_storageclass_default=false",
-    "openshift_hosted_registry_storage_kind=vsphere",
-    "openshift_hosted_registry_storage_access_modes=['ReadWriteOnce']",
-    "openshift_hosted_registry_storage_annotations=['volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/vsphere-volume']",
-    "openshift_hosted_registry_replicas=1",
-    "openshift_cloudprovider_kind=vsphere",
-    "openshift_cloudprovider_vsphere_username=${var.vsphere_storage_username}",
-    "openshift_cloudprovider_vsphere_password=${var.vsphere_storage_password}",
-    "openshift_cloudprovider_vsphere_host=${var.vsphere_server}",
-    "openshift_cloudprovider_vsphere_datacenter=${var.vsphere_datacenter}",
-    "openshift_cloudprovider_vsphere_cluster=${var.vsphere_cluster}",
-    "openshift_cloudprovider_vsphere_resource_pool=${var.vsphere_resource_pool}",
-    "openshift_cloudprovider_vsphere_datastore=${var.vsphere_storage_datastore}",
-    "openshift_cloudprovider_vsphere_folder=${var.folder}",
-    "openshift_cloudprovider_vsphere_network=${var.private_network_label}"
-  ]
+  master_cert             = "${module.certs.master_cert}"
+  master_key              = "${module.certs.master_key}"
+  router_cert             = "${module.certs.router_cert}"
+  router_key              = "${module.certs.router_key}"
+  router_ca_cert          = "${module.certs.ca_cert}"
 }

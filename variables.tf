@@ -1,127 +1,42 @@
-####################################
-# vCenter Configuration
-####################################
-variable "vsphere_server" {}
-variable "vsphere_allow_unverified_ssl" {
-  default = true
-}
-
-variable "vsphere_datacenter" {}
-variable "vsphere_cluster" {}
-variable "vsphere_resource_pool" {}
-variable "datastore" {
-  default = ""
-}
-variable "datastore_cluster" {
-  default = ""
-}
-variable "template" {}
-variable "folder" {}
-
-####################################
-# Infrastructure Configuration
-####################################
-
-
-variable "hostname_prefix" {
-  default = ""
-}
-
-variable "ssh_user" {}
-variable "ssh_password" {}
-
-variable "ssh_private_key_file" {
-  default = "~/.ssh/id_rsa"
-}
-
-variable "ssh_public_key_file" {
-  default = "~/.ssh/id_rsa.pub"
-}
-
-variable "bastion_ssh_private_key_file" {
-  default = "~/.ssh/id_rsa"
-}
-variable "private_network_label" {}
-variable "private_domain" {}
-variable "private_staticipblock" {
-  default = ""
-}
-variable "private_staticipblock_offset" {
-  default = 0
-}
-
-variable "bastion_private_ip" {
-  type = "list"
+variable "key_name" {
+  description = "Name or reference of SSH key to provision IBM Cloud instances with"
   default = []
 }
 
-variable "master_private_ip" {
-  type = "list"
-  default = []
+variable "deployment" {
+  description = "Name of deployment, most objects and hostnames prefixed with this"
+  default = "ocp-dev"
 }
 
-variable "infra_private_ip" {
-  type = "list"
-  default = []
+variable "domain" {
+  default = "my-ocp-cluster.com"
 }
 
-variable "worker_private_ip" {
-  type = "list"
-  default = []
+variable "vpc_region" {
+  default   = "us-south"
 }
 
-variable "storage_private_ip" {
-  type = "list"
-  default = []
+variable "vpc_address_prefix" {
+  description = "address prefixes for each zone in the VPC.  the VPC subnet CIDRs for each zone must be within the address prefix."
+  default = [ "10.10.0.0/24", "10.11.0.0/24", "10.12.0.0/24" ]
 }
 
-variable "private_netmask" {}
-variable "private_gateway" {}
-variable "private_dns_servers" {
-  type = "list"
+variable "vpc_subnet_cidr" {
+  default = [ "10.10.0.0/24", "10.11.0.0/24", "10.12.0.0/24" ]
 }
 
-variable "public_network_label" {
-  default = ""
-}
+##### OCP Instance details ######
 
-variable "public_staticipblock" {
-  default = "0.0.0.0/0"
-}
-
-variable "public_staticipblock_offset" {
-  default = "0"
-}
-
-variable "public_netmask" {
-  default = "0"
-}
-
-variable "public_gateway" {
-  default = ""
-}
-
-variable "public_domain" {
-  default = ""
-}
-
-variable "public_dns_servers" {
-  type = "list"
-  default = []
-}
-
-variable "bastion" {
+variable "control" {
   type = "map"
 
   default = {
-    nodes               = "1"
-    vcpu                = "2"
-    memory              = "8192"
-    disk_size           = ""      # Specify size or leave empty to use same size as template.
-    docker_disk_size    = "100"
-    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
-    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
-    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
+    profile           = "cc1-2x4"
+
+    disk_size         = "100" // GB
+    docker_vol_size   = "100" // GB
+    disk_profile      = "general-purpose"
+    disk_iops         = "0"  // set if disk_profile is "custom"
   }
 }
 
@@ -129,14 +44,15 @@ variable "master" {
   type = "map"
 
   default = {
-    nodes                 = "1"
-    vcpu                  = "4"
-    memory                = "16384"
-    disk_size             = ""      # Specify size or leave empty to use same size as template.
-    docker_disk_size      = "100"   # Specify size for docker disk, default 100.
-    thin_provisioned      = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
-    eagerly_scrub         = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
-    keep_disk_on_remove   = "false" # Set to 'true' to not delete a disk on removal.
+    nodes             = "3"
+    profile           = "bc1-8x32"
+
+    disk_size         = "100" // GB
+    docker_vol_size   = "100" // GB
+
+    disk_profile      = "general-purpose"
+    disk_iops         = "0"  // set if disk_profile is "custom"
+
   }
 }
 
@@ -144,14 +60,14 @@ variable "infra" {
   type = "map"
 
   default = {
-    nodes               = "1"
-    vcpu                = "4"
-    memory              = "16384"
-    disk_size           = ""      # Specify size or leave empty to use same size as template.
-    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
-    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
-    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
-    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
+    nodes       = "3"
+    profile           = "bc1-8x32"
+
+    disk_size         = "100" // GB
+    docker_vol_size   = "100" // GB
+    disk_profile      = "general-purpose"
+    disk_iops         = "0"  // set if disk_profile is "custom"
+
   }
 }
 
@@ -159,33 +75,36 @@ variable "worker" {
   type = "map"
 
   default = {
-    nodes               = "1"
-    vcpu                = "8"
-    memory              = "16384"
-    disk_size           = ""      # Specify size or leave empty to use same size as template.
-    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
-    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
-    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
-    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
+    nodes       = "3"
+
+    profile           = "bc1-4x16"
+
+    disk_size         = "100" // GB, 25 or 100
+    docker_vol_size   = "100" // GB
+    disk_profile      = "general-purpose"
+    disk_iops         = "0"  // set if disk_profile is "custom"
+
   }
 }
 
-variable "storage" {
+variable "glusterfs" {
   type = "map"
 
   default = {
-    nodes               = "3"
-    vcpu                = "4"
-    memory              = "8192"
-    disk_size           = ""      # Specify size or leave empty to use same size as template.
-    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
-    gluster_disk_size   = "250"
-    gluster_num_disks   = "1"
-    thin_provisioned    = ""      # True or false. Whether to use thin provisioning on the disk. Leave blank to use same as template
-    eagerly_scrub       = ""      # True or false. If set to true disk space is zeroed out on VM creation. Leave blank to use same as template
-    keep_disk_on_remove = "false" # Set to 'true' to not delete a disk on removal.
+    nodes       = "3"
+
+    profile           = "bc1-4x16"
+
+    disk_size         = "100" // GB, 25 or 100
+    docker_vol_size   = "100" // GB
+    disk_profile      = "general-purpose"
+    disk_iops         = "0"  // set if disk_profile is "custom"
+    num_gluster_disks = "1"
+    gluster_disk_size = "500"   // GB
   }
 }
+
+
 
 ####################################
 # RHN Registration
@@ -194,6 +113,8 @@ variable "rhn_username" {}
 variable "rhn_password" {}
 variable "rhn_poolid" {}
 
+
+variable "letsencrypt_email" {}
 
 variable "master_cname" {
   default = "master"
@@ -250,27 +171,6 @@ variable "cloudprovider" {
   default = "ibm"
 }
 
-variable "icp_binary" {
-  default = "nfs://jumper.rtp.raleigh.ibm.com/catalog/rhos/ibm-cloud-private-rhos-3.2.0.1907.tar.gz"
-}
-
-variable "icp_install_path" {
-  default = "/opt/ibm-cloud-private-rhos-3.2.0"
-}
-
 variable "storage_class" {
   default = "glusterfs-storage"
 }
-
-variable "vsphere_storage_username" {
-  default = ""
-}
-
-variable "vsphere_storage_password" {
-  default = ""
-}
-
-variable "vsphere_storage_datastore" {
-  default = ""
-}
-

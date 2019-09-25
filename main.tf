@@ -2,8 +2,13 @@ resource "tls_private_key" "installkey" {
   algorithm   = "RSA"
 }
 
+provider "ibm" {
+  generation = "1"
+  ibmcloud_timeout = "60"
+}
+
 module "infrastructure" {
-  source                       = "git::ssh://git@github.ibm.com/jkwong/terraform-openshift3-infra-ibmcloud-vpc"
+  source                       = "github.com/jkwong888/terraform-openshift3-infra-ibmcloud-vpc"
 
   key_name = ["${var.key_name}"]
   deployment = "${var.deployment}"
@@ -47,7 +52,7 @@ locals {
 }
 
 module "rhnregister" {
-  source             = "github.com/jkwong888/terraform-openshift-rhnregister?ref=v0.1"
+  source             = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister"
 
   bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
   bastion_ssh_user        = "ocpdeploy"
@@ -90,7 +95,11 @@ locals {
 }
 
 module "etchosts" {
-    source = "github.com/jkwong888/terraform-dns-etc-hosts?ref=v0.2"
+    source = "github.com/ibm-cloud-architecture/terraform-dns-etc-hosts"
+
+    dependson = [
+      "${module.rhnregister.registered_resource}",
+    ]
 
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     bastion_ssh_user        = "ocpdeploy"
@@ -106,8 +115,30 @@ module "etchosts" {
     num_nodes = "${local.all_count}"
 }
 
+
+module "dns_public" {
+    source                  = "github.com/ibm-cloud-architecture/terraform-dns-cloudflare"
+
+    cloudflare_email         = "${var.cloudflare_email}"
+    cloudflare_token         = "${var.cloudflare_token}"
+    cloudflare_zone          = "${var.cloudflare_zone}"
+
+    num_cnames = 2
+    cnames = "${zipmap(
+        concat(
+            list("${var.master_cname}"),
+            list("*.${var.app_cname}")
+        ),
+        concat(
+            list("${module.infrastructure.master_loadbalancer_hostname}"),
+            list("${module.infrastructure.app_loadbalancer_hostname}")
+        )
+    )}"
+}
+
+
 module "certs" {
-  source = "github.com/jkwong888/terraform-certs-letsencrypt-dns01"
+  source = "github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare"
 
   letsencrypt_email ="${var.letsencrypt_email}"
   app_subdomain = "${var.app_cname}"
@@ -115,7 +146,7 @@ module "certs" {
 }
 
 module "openshift" {
-  source = "github.com/jkwong888/terraform-openshift3-deploy?ref=v0.1"
+  source = "github.com/ibm-cloud-architecture/terraform-openshift3-deploy"
 
   dependson = [
     "${module.rhnregister.registered_resource}"
@@ -136,11 +167,11 @@ module "openshift" {
   worker_hostname         = "${formatlist("%v.%v", module.infrastructure.worker_hostname, var.domain)}"
   storage_hostname        = "${formatlist("%v.%v", module.infrastructure.storage_hostname, var.domain)}"
 
-  # second disk is docker block device, in ibm cloud it's /dev/xvdd
+  # second disk is docker block device, in ibm cloud it's /dev/xvdc
   docker_block_device     = "/dev/xvdc"
   
-  # third disk on storage nodes, in ibm cloud it's /dev/xvdd
-  gluster_block_devices   = ["/dev/xvdd"]
+  # third disk on storage nodes, in ibm cloud it's /dev/xvde
+  gluster_block_devices   = ["/dev/xvde"]
 
   # connection parameters
   bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"

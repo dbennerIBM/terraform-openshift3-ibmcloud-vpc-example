@@ -174,3 +174,13 @@ variable "cloudprovider" {
 variable "storage_class" {
   default = "glusterfs-storage"
 }
+
+variable "cloudflare_email" {
+  default = ""
+}
+variable "cloudflare_token" {
+  default = ""
+}
+variable "cloudflare_zone" {
+  default = ""
+}

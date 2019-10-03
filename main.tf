@@ -8,7 +8,7 @@ provider "ibm" {
 }
 
 module "infrastructure" {
-  source                       = "github.com/jkwong888/terraform-openshift3-infra-ibmcloud-vpc"
+  source                       = "github.com/dbennerIBM/terraform-openshift3-infra-ibmcloud-vpc.git"
 
   key_name = ["${var.key_name}"]
   deployment = "${var.deployment}"
@@ -52,7 +52,7 @@ locals {
 }
 
 module "rhnregister" {
-  source             = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister"
+  source             = "github.com/dbennerIBM/terraform-openshift-rhnregister.git"
 
   bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
   bastion_ssh_user        = "ocpdeploy"
@@ -95,7 +95,7 @@ locals {
 }
 
 module "etchosts" {
-    source = "github.com/ibm-cloud-architecture/terraform-dns-etc-hosts"
+    source = "github.com/dbennerIBM/terraform-dns-etc-hosts.git"
 
     dependson = [
       "${module.rhnregister.registered_resource}",
@@ -117,7 +117,7 @@ module "etchosts" {
 
 
 module "dns_public" {
-    source                  = "github.com/ibm-cloud-architecture/terraform-dns-cloudflare"
+    source                  = "github.com/dbennerIBM/terraform-dns-cloudflare.git"
 
     cloudflare_email         = "${var.cloudflare_email}"
     cloudflare_token         = "${var.cloudflare_token}"
@@ -138,7 +138,7 @@ module "dns_public" {
 
 
 module "certs" {
-  source = "github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare"
+  source = "github.com/dbennerIBM/terraform-certs-letsencrypt-cloudflare.git"
 
   letsencrypt_email ="${var.letsencrypt_email}"
   app_subdomain = "${var.app_cname}"
@@ -146,7 +146,7 @@ module "certs" {
 }
 
 module "openshift" {
-  source = "github.com/ibm-cloud-architecture/terraform-openshift3-deploy"
+  source = "github.com/dbennerIBM/terraform-openshift3-deploy.git"
 
   dependson = [
     "${module.rhnregister.registered_resource}"

@@ -125,14 +125,10 @@ module "dns_public" {
 
     num_cnames = 2
     cnames = "${zipmap(
-        concat(
-            list("${var.master_cname}"),
-            list("*.${var.app_cname}")
-        ),
-        concat(
-            list("${module.infrastructure.master_loadbalancer_hostname}"),
-            list("${module.infrastructure.app_loadbalancer_hostname}")
-        )
+
+      list("${var.master_cname}","*.${var.app_cname}"),
+      list("${module.infrastructure.master_loadbalancer_hostname}",
+           "${module.infrastructure.app_loadbalancer_hostname}")
     )}"
 }
 

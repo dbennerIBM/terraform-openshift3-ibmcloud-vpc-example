@@ -34,7 +34,7 @@ variable "control" {
     profile           = "cc1-2x4"
 
     disk_size         = "100" // GB
-    docker_vol_size   = "100" // GB
+    docker_vol_size   = "200" // GB
     disk_profile      = "general-purpose"
     disk_iops         = "0"  // set if disk_profile is "custom"
   }
